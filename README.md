@@ -28,7 +28,7 @@ Open the file `dist/index.html` in your browser
 
 ## Credits
 
-Program by [Kirk Israel](https://kirk.is/)/(Alien Bill Productions)[https://alienbill.com/]
+Program by [Kirk Israel](https://kirk.is/)/[Alien Bill Productions](https://alienbill.com/)
 
 Uses [pizzicato.js](https://alemangui.github.io/pizzicato/)
 

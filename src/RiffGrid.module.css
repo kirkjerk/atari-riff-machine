@@ -1,0 +1,51 @@
+.grid {
+    background-color: #ccc;
+    position: relative;
+    cursor: pointer;
+    margin-left: 2em;
+}
+.grid div {
+    pointer-events: none;
+}
+.grid .note {
+    position: absolute;
+    background-color: black;
+}
+.grid .rowHilite {
+    position: absolute;
+    background-color: red;
+    opacity: 0.25;
+    width: 100%;
+}
+.grid .colHilite {
+    position: absolute;
+    background-color: blue;
+    opacity: 0.25;
+    height: 100%;
+}
+
+.grid .rowLabel {
+    color: black;
+    left: -2em;
+    position: absolute;
+}
+.grid .beatLine {
+    width: 1px;
+    position: absolute;
+    background-color: #666;
+    height: 100%;
+}
+.timePointer {
+    width: 1px;
+    position: absolute;
+    background-color: #ff0;
+    height: 100%;
+}
+
+.grid .measureLine {
+    width: 2px;
+}
+
+input.short {
+    width: 2em;
+}

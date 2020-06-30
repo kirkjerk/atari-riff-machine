@@ -1,6 +1,6 @@
 # atari-riff-machine
 
-Empty project.
+A tracker and virtual keyboard for making atari 2600 riffs + loops
 
 ## Building and running on localhost
 
@@ -28,5 +28,10 @@ Open the file `dist/index.html` in your browser
 
 ## Credits
 
-Made with [createapp.dev](https://createapp.dev/)
+Program by [Kirk Israel](https://kirk.is/)/(Alien Bill Productions)[https://alienbill.com/]
 
+Uses [pizzicato.js](https://alemangui.github.io/pizzicato/)
+
+Atari 2600 sound files courtesy [Random Terrain](https://www.randomterrain.com/)
+
+Made with [createapp.dev](https://createapp.dev/) and [parcel.js](https://parceljs.org/)

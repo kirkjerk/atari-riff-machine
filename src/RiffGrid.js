@@ -1,19 +1,20 @@
 /*
 TODO
-
--need idea of "env note" with ADSR - or fancyNote...
-
+//fix moving bar... might have to recibrate rather than increment x... maybve even less often...
 -erasing notes when painting...
--zebra bars and line up with keyboard shortcuts on grid
+
+-zebra bars rows and line up with keyboard shortcuts on grid
 
 - when playing make sure it resets previous play through
 
 
--need to modify notesAreSame so it has different event for Volume Change in playback
-
-
 -looping in js
--envelope sounds
+
+-display of envelopes for selection...
+
+-generation of bB code!
+
+-second riff, with playback controlled from parent
 
 */
 
@@ -31,6 +32,8 @@ import {
     frames2mills,
     useInterval,
 } from './Utils.js';
+
+import { doBasicTemplateSingle, doBasicTemplateDouble } from './templateBas.js';
 
 import SoundCache from '/SoundCache.js';
 
@@ -132,6 +135,37 @@ const x2Col = (x, quantizeMode, BPM) => {
     return Math.floor(x / colWidthInFrames);
 };
 
+const makeBatariMusic = (origNotes, totalBeats, BPM) => {
+    const notes = {};
+    const notesOrRestsWithDuration = [];
+    //make a deep copy
+    Object.keys(origNotes).forEach((key) => {
+        notes[key] = { ...origNotes[key] };
+    });
+    let currentlyPlayingTFV = null;
+
+    for (let i = 0; i < beats2Frames(totalBeats, BPM); i++) {
+        const thisFrameTFV = notes[i]; //grab this
+        if (!thisFrameTFV) thisFrameTFV = { t: 0, f: 0, v: 0 };
+        if (!notesAreSameTFV(thisFrameTFV, currentlyPlayingTFV)) {
+            if (currentlyPlayingTFV) {
+                currentlyPlayingTFV.duration = i - currentlyPlayingTFV.startFrame;
+                notesOrRestsWithDuration.push(currentlyPlayingTFV);
+            }
+            currentlyPlayingTFV = { ...thisFrameTFV, startFrame: i };
+        }
+    }
+    if (currentlyPlayingTFV) {
+        currentlyPlayingTFV.duration = beats2Frames(totalBeats, BPM) - currentlyPlayingTFV.startFrame;
+        notesOrRestsWithDuration.push(currentlyPlayingTFV);
+    }
+    //VCFD
+    const buf = notesOrRestsWithDuration
+        .map((tfvd) => `   ${tfvd.v}, ${tfvd.t}, ${tfvd.f}, ${tfvd.duration}\n`)
+        .join('');
+    console.log(doBasicTemplateSingle(buf));
+};
+
 const launchPlayback = (origNotes, totalBeats, BPM) => {
     const notes = {};
 
@@ -139,20 +173,19 @@ const launchPlayback = (origNotes, totalBeats, BPM) => {
     //are messing up our source material
 
     Object.keys(origNotes).forEach((key) => {
-        const note = origNotes[key];
-        notes[key] = { ...note };
+        notes[key] = { ...origNotes[key] };
     });
 
     let currentlyPlayingTFV = null;
     const notesWithStartAndEnd = [];
 
+    makeBatariMusic(origNotes, totalBeats, BPM);
+
     //go over every frame
     for (let i = 0; i < beats2Frames(totalBeats, BPM); i++) {
         const thisFrameTFV = notes[i]; //grab this
 
-        if (i < 6) console.log({ i, thisFrameTFV });
-
-        if (!notesAreSameTFV(thisFrameTFV, currentlyPlayingTFV, i)) {
+        if (!notesAreSameTFV(thisFrameTFV, currentlyPlayingTFV)) {
             //OK WE ARE STARTING A NEW NOTE OF SOME SORT (MAYBE JUST VOLUME CHANGE)
             if (currentlyPlayingTFV) {
                 //IF THERE WAS A THING PLAYING, WE EITHER MODIFY IT
@@ -162,12 +195,12 @@ const launchPlayback = (origNotes, totalBeats, BPM) => {
                     currentlyPlayingTFV.v = thisFrameTFV.v;
                 } else {
                     //new note so end what was playing before
-                    console.log(`frame ${i} ending this one`, currentlyPlayingTFV);
+                    //console.log(`frame ${i} ending this one`, currentlyPlayingTFV);
                     currentlyPlayingTFV.endFrame = i - 1;
                     notesWithStartAndEnd.push(currentlyPlayingTFV);
 
                     if (thisFrameTFV) {
-                        console.log(`looking at frame ${i} we grab start frame because chnging note`);
+                        //console.log(`looking at frame ${i} we grab start frame because chnging note`);
                         thisFrameTFV.startFrame = i;
                         thisFrameTFV.startV = thisFrameTFV.v;
                         thisFrameTFV.volChange = null;
@@ -184,18 +217,14 @@ const launchPlayback = (origNotes, totalBeats, BPM) => {
                 }
                 currentlyPlayingTFV = thisFrameTFV;
             }
-
-            if (currentlyPlayingTFV) {
-                console.log(`frame ${i} currentlyPlayingTFV.startFrame is ${currentlyPlayingTFV.startFrame}`);
-            }
         }
     }
     if (currentlyPlayingTFV) {
         currentlyPlayingTFV.endFrame = beats2Frames(totalBeats, BPM) - 1;
         notesWithStartAndEnd.push(currentlyPlayingTFV);
     }
-    console.log(notes);
-    console.log(notesWithStartAndEnd);
+    //console.log(notes);
+    //console.log(notesWithStartAndEnd);
 
     notesWithStartAndEnd.forEach((note) => {
         setTimeout(() => {
@@ -216,7 +245,7 @@ const launchPlayback = (origNotes, totalBeats, BPM) => {
     });
 };
 
-const notesAreSameTFV = (noteA, noteB, i) => {
+const notesAreSameTFV = (noteA, noteB) => {
     // console.log(i, noteA, 'vs', noteB);
     if (noteA == null && noteB == null) return true;
     if (noteA == null && noteB != null) return false;
@@ -235,7 +264,7 @@ const notesDifferOnlyInV = (noteA, noteB) => {
 };
 
 const MODE = {
-    FREEPAINT: 'freepaint',
+    FREEHAND: 'freehand',
     QUANTIZE: 'quantize',
 };
 const QUANT = {
@@ -243,6 +272,19 @@ const QUANT = {
     HALFBEAT: 2,
     THIRDBEAT: 3,
     QUARTERBEAT: 4,
+};
+
+const diagramForEnvelope = (env) => {
+    return (
+        <div
+            className={styles.envDiagram}
+            style={{ height: `${settings.AtariMaxVol}px`, width: `${env.length * settings.PixelsPerFrame}px` }}
+        >
+            {env.map((v, i) => (
+                <div key={i} style={{ height: `${v}px` }}></div>
+            ))}
+        </div>
+    );
 };
 
 const RiffGrid = ({ soundSet }) => {
@@ -253,7 +295,7 @@ const RiffGrid = ({ soundSet }) => {
     // current set of notes at specific frames
     const [notes, setNotes] = useState({});
     //how long the whole thing is
-    const [totalBeats, setTotalBeats] = useState(4);
+    const [totalBeats, setTotalBeats] = useState(16);
     //how often to draw measure markers
     const [measureLengthInBeasts, setMeasureLengthInBeats] = useState(4);
     //immediate sound when mousing down
@@ -264,7 +306,7 @@ const RiffGrid = ({ soundSet }) => {
 
     const [BPM, setBPM] = React.useState(120);
 
-    const [noteMode, setNoteMode] = React.useState(MODE.QUANTIZE);
+    const [noteMode, setNoteMode] = React.useState(MODE.FREEHAND);
     const [quantizeMode, setQuantizeMode] = React.useState(QUANT.HALFBEAT);
 
     const [soundLengthInFrames, setSoundLengthInFrames] = React.useState(30);
@@ -303,7 +345,7 @@ const RiffGrid = ({ soundSet }) => {
         const frame = pixel2frame(x);
 
         const newSound = soundSet.sounds[row];
-        if (noteMode === MODE.FREEPAINT) {
+        if (noteMode === MODE.FREEHAND) {
             if (buttons) {
                 const note = { ...newSound, row, v: 8 };
                 const notesClone = { ...notes };
@@ -397,6 +439,11 @@ const RiffGrid = ({ soundSet }) => {
 
     //console.log(soundMap); //sound_06_25.wav
 
+    const envelopeToDiagram = {};
+    Object.keys(envelopes).map((key) => {
+        envelopeToDiagram[key] = diagramForEnvelope(envelopes[key]);
+    });
+
     return (
         <div>
             <label>
@@ -458,11 +505,11 @@ const RiffGrid = ({ soundSet }) => {
             <div>
                 <label>
                     <input
-                        onChange={() => setNoteMode(MODE.FREEPAINT)}
+                        onChange={() => setNoteMode(MODE.FREEHAND)}
                         type="radio"
-                        checked={noteMode == MODE.FREEPAINT}
+                        checked={noteMode == MODE.FREEHAND}
                     />
-                    {MODE.FREEPAINT}
+                    {MODE.FREEHAND}
                 </label>
                 <br />
                 <label>
@@ -483,18 +530,15 @@ const RiffGrid = ({ soundSet }) => {
                         [QUANT.QUARTERBEAT]: '1/4 beat',
                     }}
                 />
-                <RadioSet
-                    selectedVal={currentEnvelope}
-                    setter={setCurrentEnvelope}
-                    valToCaptions={{
-                        steadyHalfBeat: 'steadyHalfBeat',
-                        steadyQuarterBeat: 'steadyHalfBeat',
-                        quickRelease: 'quickRelease',
-                        slowRelease: 'slowRelease',
-                        quickReverse: 'quickReverse',
-                        slowReverse: 'slowReverse',
-                    }}
-                />
+                <br />
+                envelope:
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <RadioSet
+                        selectedVal={currentEnvelope}
+                        setter={setCurrentEnvelope}
+                        valToCaptions={envelopeToDiagram}
+                    />
+                </div>
             </div>
         </div>
     );
@@ -504,9 +548,10 @@ const RadioSet = ({ selectedVal, setter, valToCaptions }) => {
     return Object.keys(valToCaptions).map((val) => {
         const caption = valToCaptions[val];
         return (
-            <label key={val}>
+            <label className={styles.radioLabel} key={val}>
                 <input onChange={() => setter(val)} type="radio" checked={val == selectedVal} />
-                {caption}
+                &nbsp;
+                {caption}&nbsp;&nbsp;
             </label>
         );
     });

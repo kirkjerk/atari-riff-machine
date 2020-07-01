@@ -7,29 +7,29 @@
 .grid div {
     pointer-events: none;
 }
-.grid .note {
+.note {
     position: absolute;
     background-color: black;
 }
-.grid .rowHilite {
+.rowHilite {
     position: absolute;
     background-color: red;
     opacity: 0.25;
     width: 100%;
 }
-.grid .colHilite {
+.colHilite {
     position: absolute;
     background-color: blue;
     opacity: 0.25;
     height: 100%;
 }
 
-.grid .rowLabel {
+.rowLabel {
     color: black;
     left: -2em;
     position: absolute;
 }
-.grid .beatLine {
+.beatLine {
     width: 1px;
     position: absolute;
     background-color: #666;
@@ -48,4 +48,18 @@
 
 input.short {
     width: 2em;
+}
+
+.envDiagram {
+    display: inline-flex;
+    align-items: center;
+}
+.envDiagram > div {
+    width: 1px;
+    background-color: black;
+}
+
+.radioLabel {
+    display: inline-flex;
+    align-items: center;
 }

@@ -52,7 +52,7 @@ const SoundCache = {
 
     playSound: (sound) => {
         //console.log(getLoop(sound.t, sound.f));
-        console.log(sound.t, sound.f);
+        // console.log(sound.t, sound.f);
         getLoop(sound.t, sound.f).play();
     },
     stopSound: (sound) => {

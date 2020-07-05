@@ -58,4 +58,14 @@ export function useInterval(callback, delay) {
         }
     }, [delay]);
 }
-import React from 'react';
+
+export const MODE = {
+    FREEHAND: 'freehand',
+    QUANTIZE: 'quantize',
+};
+export const QUANT = {
+    WHOLEBEAT: 1,
+    HALFBEAT: 2,
+    THIRDBEAT: 3,
+    QUARTERBEAT: 4,
+};

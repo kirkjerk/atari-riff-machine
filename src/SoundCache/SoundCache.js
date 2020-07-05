@@ -1,9 +1,9 @@
-import Pizzicato from './js/Pizzicato.min.js';
+import Pizzicato from '../js/Pizzicato.min.js';
 
 //const bundledFiles = require('./wav/*.wav');
 
-import bundledFiles from './wav/*.wav';
-import { settings } from './Utils.js';
+import bundledFiles from '../wav/*.wav';
+import { settings } from '../Utils.js';
 
 const clipCache = {};
 

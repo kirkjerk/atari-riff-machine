@@ -1,16 +1,20 @@
+.riffMachine {
+    border-radius: 10px;
+    background-color: #ddddff;
+    display: inline-block;
+    padding: 1em;
+}
+
 .grid {
     background-color: #ccc;
     position: relative;
     cursor: pointer;
-    margin-left: 2em;
+    margin-left: 5em;
 }
 .grid div {
     pointer-events: none;
 }
-.note {
-    position: absolute;
-    background-color: black;
-}
+
 .rowHilite {
     position: absolute;
     background-color: red;
@@ -24,11 +28,11 @@
     height: 100%;
 }
 
-.rowLabel {
-    color: black;
-    left: -2em;
+.note {
     position: absolute;
+    background-color: black;
 }
+
 .beatLine {
     width: 1px;
     position: absolute;
@@ -59,7 +63,14 @@ input.short {
     background-color: black;
 }
 
-.radioLabel {
-    display: inline-flex;
-    align-items: center;
+.rowLabel {
+    color: black;
+    left: -4em;
+    position: absolute;
+    width: 4em;
+    display: flex;
+    justify-content: space-between;
+}
+.rowLabel.rowLabelPressed {
+    background-color: #fcc;
 }

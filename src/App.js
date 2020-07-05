@@ -6,20 +6,13 @@ import DefaultSoundSets from './defs/DefaultSoundSets.js';
 
 /*
 TODO
-//fix moving bar... might have to recibrate rather than increment x... ***maybve even less often***
--erasing notes when painting...
+\-visual keyboard and drumpads
 
--zebra bars rows and line up with keyboard shortcuts on grid
+-zebra bars rows and line up with keyboard shortcuts on grid?
 
 - when playing make sure it resets previous play through
 
-
-
 -looping in js
-
--display of envelopes for selection...
-
--generation of bB code!
 
 -second riff, with playback controlled from parent
 

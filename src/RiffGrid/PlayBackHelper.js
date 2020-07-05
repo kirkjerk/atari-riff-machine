@@ -2,7 +2,7 @@ import SoundCache from '../SoundCache/SoundCache.js';
 import { beats2Frames, frames2mills } from '../Utils.js';
 import { doBasicTemplateSingle, doBasicTemplateDouble } from '../defs/templateBas.js';
 
-const launchPlayback = (origNotes, totalBeats, BPM) => {
+const launchPlayback = (origNotes, totalBeats, BPM, setPlaybackStartingTime) => {
     const notes = {};
 
     //need to make a deep copy of origNotes, otherwise references
@@ -15,9 +15,10 @@ const launchPlayback = (origNotes, totalBeats, BPM) => {
     let currentlyPlayingTFV = null;
     const notesWithStartAndEnd = [];
 
-    makeBatariMusic(origNotes, totalBeats, BPM);
+    //makeBatariMusic(origNotes, totalBeats, BPM);
 
-    //go over every frame
+    //go over every frame and see if the notes are different,
+    //make a set notesWithStartAndEnd....
     for (let i = 0; i < beats2Frames(totalBeats, BPM); i++) {
         const thisFrameTFV = notes[i]; //grab this
 
@@ -61,6 +62,11 @@ const launchPlayback = (origNotes, totalBeats, BPM) => {
     }
     //console.log(notes);
     //console.log(notesWithStartAndEnd);
+    playbackNotesWithStartAndEnd(notesWithStartAndEnd, totalBeats, BPM, setPlaybackStartingTime);
+};
+
+const playbackNotesWithStartAndEnd = (notesWithStartAndEnd, totalBeats, BPM, setPlaybackStartingTime) => {
+    setPlaybackStartingTime(Date.now());
 
     notesWithStartAndEnd.forEach((note) => {
         setTimeout(() => {
@@ -79,6 +85,11 @@ const launchPlayback = (origNotes, totalBeats, BPM) => {
             SoundCache.stopByTF(note.t, note.f);
         }, frames2mills(note.endFrame));
     });
+    //debugger;
+    //console.log('set reloop at', frames2mills(beats2Frames(totalBeats, BPM)));
+    setTimeout(() => {
+        playbackNotesWithStartAndEnd(notesWithStartAndEnd, totalBeats, BPM, setPlaybackStartingTime);
+    }, frames2mills(beats2Frames(totalBeats, BPM)));
 };
 
 const notesAreSameTFV = (noteA, noteB) => {

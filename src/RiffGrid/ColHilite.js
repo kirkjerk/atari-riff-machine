@@ -3,13 +3,11 @@ import { beats2Pixels, frame2pixel, MODE } from '../Utils.js';
 
 import styles from './RiffGrid.module.css';
 
-const ColHilite = ({ colHilite, quantizeMode, BPM, noteMode, envelope }) => {
+const ColHilite = ({ colHilite, noteAlignMode, BPM, envelope, quantizeMode }) => {
     const fullColWidth = beats2Pixels(1 / quantizeMode, BPM);
-    //console.log({ quantizeMode, colHilite, colWidth });
+    const left = noteAlignMode == MODE.QUANTIZE ? fullColWidth * colHilite : colHilite;
 
     const markerWidth = frame2pixel(envelope.length);
-
-    const left = noteMode == MODE.QUANTIZE ? fullColWidth * colHilite : colHilite;
 
     const style = { width: `${markerWidth}px`, left: `${left}px` };
 

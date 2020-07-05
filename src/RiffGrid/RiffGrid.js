@@ -72,7 +72,7 @@ const RiffGrid = ({ soundSet }) => {
     // current set of notes at specific frames
     const [notes, setNotes] = useState({});
     //how long the whole thing is
-    const [totalBeats, setTotalBeats] = useState(16);
+    const [totalBeats, setTotalBeats] = useState(4);
     //how often to draw measure markers
     const [measureLengthInBeasts, setMeasureLengthInBeats] = useState(4);
     //immediate sound when mousing down
@@ -83,10 +83,10 @@ const RiffGrid = ({ soundSet }) => {
 
     const [BPM, setBPM] = React.useState(120);
 
-    const [noteAlignMode, setNoteAlignMode] = React.useState(MODE.FREEHAND);
-    const [quantizeMode, setQuantizeMode] = React.useState(QUANT.HALFBEAT);
+    const [noteAlignMode, setNoteAlignMode] = React.useState(MODE.QUANTIZE);
+    const [quantizeMode, setQuantizeMode] = React.useState(QUANT.WHOLEBEAT);
 
-    const [currentEnvelope, setCurrentEnvelope] = React.useState('steadyQuarterBeat');
+    const [currentEnvelope, setCurrentEnvelope] = React.useState('slowRelease');
 
     const [keyCurrentlyPressed, setKeyCurrentlyPressed] = React.useState(null);
     const [keyboardToNote, setKeyboardToNote] = React.useState({});
@@ -203,10 +203,14 @@ const RiffGrid = ({ soundSet }) => {
 
         for (let i = 0; i < envelope.length; i++) {
             const noteWithVol = { ...note, v: envelope[i] };
-            if (drawEraseMode !== 'erase') {
-                newNotes[frameStart + i] = noteWithVol;
-            } else {
-                delete newNotes[frameStart + i];
+
+            const thisFrame = frameStart + i;
+            if (thisFrame < beats2Frames(totalBeats, BPM)) {
+                if (drawEraseMode !== 'erase') {
+                    newNotes[thisFrame] = noteWithVol;
+                } else {
+                    delete newNotes[thisFrame];
+                }
             }
         }
 
@@ -275,7 +279,11 @@ const RiffGrid = ({ soundSet }) => {
         >
             <label>
                 Riff Length in Beats:{' '}
-                <input className={styles.short} value={totalBeats} onChange={(e) => setTotalBeats(e.target.value)} />
+                <input
+                    className={styles.short}
+                    value={totalBeats}
+                    onChange={(e) => setTotalBeats(e.target.value ? e.target.value : 4)}
+                />
             </label>
             <label>
                 BPM: <input className={styles.short} value={BPM} onChange={(e) => setBPM(e.target.value)} />
@@ -283,9 +291,9 @@ const RiffGrid = ({ soundSet }) => {
 
             <button
                 onClick={() => {
-                    launchPlayback(notes, totalBeats, BPM);
-                    setTimePointer(0);
-                    setPlaybackStartingTime(Date.now());
+                    launchPlayback(notes, totalBeats, BPM, setPlaybackStartingTime);
+                    setTimePointer(0); //TODO: maybe remove this
+
                     setIsPlaying(true);
                 }}
             >
@@ -315,7 +323,11 @@ const RiffGrid = ({ soundSet }) => {
                 {/* soundSet={soundSet} keyCurrentlyPressed={keyCurrentlyPressed} */}
                 <RowLabels {...{ soundSet, keyCurrentlyPressed }} />
                 <RowHilite {...{ rowHilite }} />
-                <ColHilite {...{ colHilite, quantizeMode, BPM, noteAlignMode }} envelope={envelopes[currentEnvelope]} />
+
+                <ColHilite
+                    {...{ colHilite, noteAlignMode, BPM, noteAlignMode, quantizeMode }}
+                    envelope={envelopes[currentEnvelope]}
+                />
                 <BeatLines {...{ totalBeats, measureLengthInBeasts, BPM }} />
                 <NoteBlocks {...{ notes }} />
 

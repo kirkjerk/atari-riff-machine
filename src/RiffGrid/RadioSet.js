@@ -7,8 +7,7 @@ const RadioSet = ({ selectedVal, setter, valToCaptions }) => {
         return (
             <label className={styles.radioLabel} key={val}>
                 <input onChange={() => setter(val)} type="radio" checked={val == selectedVal} />
-                &nbsp;
-                {caption}&nbsp;&nbsp;
+                {caption}
             </label>
         );
     });

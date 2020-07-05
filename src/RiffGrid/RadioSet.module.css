@@ -1,4 +1,4 @@
 .radioLabel {
-    display: inline-flex;
+    display: flex;
     align-items: center;
 }

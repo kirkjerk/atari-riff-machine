@@ -14,6 +14,10 @@ export const frames2mills = (frames) => {
     return 1000 * (frames / settings.FramesPerSecond);
 };
 
+export const millis2frames = (millis) => {
+    return (millis / 1000) * settings.FramesPerSecond;
+};
+
 export const pixel2frame = (pixel) => {
     return pixel / settings.PixelsPerFrame;
 };

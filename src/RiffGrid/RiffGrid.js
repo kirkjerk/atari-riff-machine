@@ -9,12 +9,15 @@ import {
     pixel2frame,
     map,
     frames2mills,
+    frame2pixel,
+    millis2frames,
     useInterval,
     MODE,
     QUANT,
 } from '../Utils.js';
 
 import RadioSet from './RadioSet.js';
+import ControlStackWrap from './ControlStackWrap.js';
 import NoteBlocks from './NoteBlocks.js';
 import RowLabels from './RowLabels.js';
 import BeatLines from './BeatLines.js';
@@ -80,13 +83,17 @@ const RiffGrid = ({ soundSet }) => {
 
     const [BPM, setBPM] = React.useState(120);
 
-    const [noteMode, setNoteMode] = React.useState(MODE.FREEHAND);
+    const [noteAlignMode, setNoteAlignMode] = React.useState(MODE.FREEHAND);
     const [quantizeMode, setQuantizeMode] = React.useState(QUANT.HALFBEAT);
 
-    const [currentEnvelope, setCurrentEnvelope] = React.useState('quickRelease');
+    const [currentEnvelope, setCurrentEnvelope] = React.useState('steadyQuarterBeat');
 
     const [keyCurrentlyPressed, setKeyCurrentlyPressed] = React.useState(null);
     const [keyboardToNote, setKeyboardToNote] = React.useState({});
+
+    const [drawEraseMode, setDrawEraseMode] = React.useState('draw');
+
+    const [playbackStartingTime, setPlaybackStartingTime] = React.useState(0);
 
     useEffect(() => primeSoundCache(soundSet, setKeyboardToNote), [soundSet]);
 
@@ -110,7 +117,7 @@ const RiffGrid = ({ soundSet }) => {
         const prevRow = y2NoteRow(prevY);
         setRowHilite(row);
 
-        if (noteMode == MODE.QUANTIZE) {
+        if (noteAlignMode == MODE.QUANTIZE) {
             const col = x2BeatCol(x, quantizeMode, BPM);
             setColHilite(col);
         } else {
@@ -120,9 +127,9 @@ const RiffGrid = ({ soundSet }) => {
         const frame = pixel2frame(x);
 
         const newSound = soundSet.sounds[row];
-        if (noteMode === MODE.FREEHAND) {
+        if (noteAlignMode === MODE.FREEHAND) {
             if (buttons) {
-                const note = { ...newSound, row, v: 8 };
+                const note = { ...newSound, row };
                 const notesClone = { ...notes };
 
                 // this used to be a simple
@@ -131,15 +138,16 @@ const RiffGrid = ({ soundSet }) => {
                 // grind through 100 spots between start and end
                 // and make sure it's painted in...
                 if (row !== prevRow) {
-                    //ehh if they're skipping rows screw 'em, they just get this
-                    notesClone[frame] = note;
+                    //ehh if they're skipping rows/changing notes screw 'em, they just get this
+                    setNotes(newNoteSetApplyingNoteWithEnvelope(notes, note, frame));
                 }
+                let existingNotes = { ...notes };
                 for (let i = 0; i <= 100; i++) {
                     const checkX = parseInt(map(i, 0, 100, prevX, x));
                     const checkFrame = pixel2frame(checkX);
-                    notesClone[checkFrame] = note;
+                    existingNotes = newNoteSetApplyingNoteWithEnvelope(existingNotes, note, checkFrame);
                 }
-                setNotes(notesClone);
+                setNotes(existingNotes);
                 startOrContinueCurrentlyPlayingSound(newSound);
             } else {
                 stopAnyCurrentlyPlayingSound();
@@ -147,14 +155,22 @@ const RiffGrid = ({ soundSet }) => {
         }
     };
 
-    const handleKeyDown = (e, keyboardToNote, noteMode, envelope, setKeyCurrentlyPressed, soundSet, setRowHilite) => {
+    const handleKeyDown = (
+        e,
+        keyboardToNote,
+        noteAlignMode,
+        envelope,
+        setKeyCurrentlyPressed,
+        soundSet,
+        setRowHilite
+    ) => {
         setKeyCurrentlyPressed(e.key);
 
         setRowHilite(soundSet.sounds.findIndex((note) => note.key == e.key));
 
         const note = keyboardToNote[e.key];
         if (note) {
-            if (noteMode == MODE.QUANTIZE) {
+            if (noteAlignMode == MODE.QUANTIZE) {
                 //stopAnyCurrentlyPlayingSound();
                 playSoundInEnvelopeNow(note, envelope);
             } else {
@@ -171,31 +187,30 @@ const RiffGrid = ({ soundSet }) => {
 
     const handleMouseDown = (e) => {
         const { offsetX: x, offsetY: y, buttons } = e.nativeEvent;
-        if (noteMode === MODE.QUANTIZE && buttons) {
+        if (noteAlignMode === MODE.QUANTIZE && buttons) {
             const row = y2NoteRow(y);
             const newSound = soundSet.sounds[row];
-            const note = { ...newSound, row, v: 8 };
-            const notesClone = { ...notes };
+            const note = { ...newSound, row };
             const frameStart = x2BeatCol(x, quantizeMode, BPM) * beats2Frames(1 / quantizeMode, BPM);
-
-            console.log(beats2Frames(0.5, 120));
-
-            // for (let i = 0; i <= 60; i++) {
-            //     const v = Math.round((i + 2) / 4);
-            //     const noteWithVol = { ...note, v };
-            //     notesClone[frameStart + i] = noteWithVol;
-            // }
-
-            const envelope = envelopes[currentEnvelope];
-
-            for (let i = 0; i < envelope.length; i++) {
-                const noteWithVol = { ...note, v: envelope[i] };
-                notesClone[frameStart + i] = noteWithVol;
-            }
-
-            setNotes(notesClone);
-            playSoundInEnvelopeNow(newSound, envelope);
+            setNotes(newNoteSetApplyingNoteWithEnvelope(notes, note, frameStart));
+            playSoundInEnvelopeNow(newSound, envelopes[currentEnvelope]);
         }
+    };
+
+    const newNoteSetApplyingNoteWithEnvelope = (notes, note, frameStart) => {
+        const newNotes = { ...notes };
+        const envelope = envelopes[currentEnvelope];
+
+        for (let i = 0; i < envelope.length; i++) {
+            const noteWithVol = { ...note, v: envelope[i] };
+            if (drawEraseMode !== 'erase') {
+                newNotes[frameStart + i] = noteWithVol;
+            } else {
+                delete newNotes[frameStart + i];
+            }
+        }
+
+        return newNotes;
     };
 
     //oof intervals and react don't play too well together -- I had to jam this here
@@ -203,7 +218,7 @@ const RiffGrid = ({ soundSet }) => {
     useInterval(() => {
         // Your custom logic here
         setTimePointer(timePointer + 1);
-    }, frames2mills(1));
+    }, frames2mills(10));
 
     const startOrContinueCurrentlyPlayingSound = (newSound) => {
         if (currrentlyPlayingSound && newSound != currrentlyPlayingSound) {
@@ -248,7 +263,7 @@ const RiffGrid = ({ soundSet }) => {
                 handleKeyDown(
                     e,
                     keyboardToNote,
-                    noteMode,
+                    noteAlignMode,
                     envelopes[currentEnvelope],
                     setKeyCurrentlyPressed,
                     soundSet,
@@ -270,6 +285,7 @@ const RiffGrid = ({ soundSet }) => {
                 onClick={() => {
                     launchPlayback(notes, totalBeats, BPM);
                     setTimePointer(0);
+                    setPlaybackStartingTime(Date.now());
                     setIsPlaying(true);
                 }}
             >
@@ -282,7 +298,7 @@ const RiffGrid = ({ soundSet }) => {
                 }}
                 onMouseDown={(e) => {
                     handleMouseMove(e, setRowHilite);
-                    if (noteMode === MODE.QUANTIZE) {
+                    if (noteAlignMode === MODE.QUANTIZE) {
                         handleMouseDown(e);
                     }
                 }}
@@ -299,50 +315,68 @@ const RiffGrid = ({ soundSet }) => {
                 {/* soundSet={soundSet} keyCurrentlyPressed={keyCurrentlyPressed} */}
                 <RowLabels {...{ soundSet, keyCurrentlyPressed }} />
                 <RowHilite {...{ rowHilite }} />
-                <ColHilite {...{ colHilite, quantizeMode, BPM, noteMode }} envelope={currentEnvelope} />
+                <ColHilite {...{ colHilite, quantizeMode, BPM, noteAlignMode }} envelope={envelopes[currentEnvelope]} />
                 <BeatLines {...{ totalBeats, measureLengthInBeasts, BPM }} />
                 <NoteBlocks {...{ notes }} />
-                {isPlaying && <div className={styles.timePointer} style={{ left: `${timePointer}px` }}></div>}
+
+                {isPlaying && (
+                    <div
+                        className={styles.timePointer}
+                        style={{ left: `${frame2pixel(millis2frames(Date.now() - playbackStartingTime, BPM))}px` }}
+                    ></div>
+                )}
                 {/* {renderGhost(rowHilite)} */}
             </div>
 
             <div>
-                <label>
-                    <input
-                        onChange={() => setNoteMode(MODE.FREEHAND)}
-                        type="radio"
-                        checked={noteMode == MODE.FREEHAND}
-                    />
-                    {MODE.FREEHAND}
-                </label>
-                <br />
-                <label>
-                    <input
-                        onChange={() => setNoteMode(MODE.QUANTIZE)}
-                        type="radio"
-                        checked={noteMode == MODE.QUANTIZE}
-                    />
-                    {MODE.QUANTIZE} to:
-                </label>
-                <RadioSet
-                    selectedVal={quantizeMode}
-                    setter={setQuantizeMode}
-                    valToCaptions={{
-                        [QUANT.WHOLEBEAT]: 'beat',
-                        [QUANT.HALFBEAT]: '1/2 beat',
-                        [QUANT.THIRDBEAT]: '1/3 beat',
-                        [QUANT.QUARTERBEAT]: '1/4 beat',
-                    }}
-                />
-                <br />
-                envelope:
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+                <ControlStackWrap title="alignment">
+                    <label>
+                        <input
+                            onChange={() => setNoteAlignMode(MODE.FREEHAND)}
+                            type="radio"
+                            checked={noteAlignMode == MODE.FREEHAND}
+                        />
+                        {MODE.FREEHAND}
+                    </label>
+                    <br />
+                    <label>
+                        <input
+                            onChange={() => setNoteAlignMode(MODE.QUANTIZE)}
+                            type="radio"
+                            checked={noteAlignMode == MODE.QUANTIZE}
+                        />
+                        {MODE.QUANTIZE} to:
+                    </label>
+                    <div style={{ marginLeft: '1em' }}>
+                        <RadioSet
+                            selectedVal={quantizeMode}
+                            setter={(val) => {
+                                setQuantizeMode(val);
+                                setNoteAlignMode(MODE.QUANTIZE);
+                            }}
+                            valToCaptions={{
+                                [QUANT.WHOLEBEAT]: 'beat',
+                                [QUANT.HALFBEAT]: '1/2 beat',
+                                [QUANT.THIRDBEAT]: '1/3 beat',
+                                [QUANT.QUARTERBEAT]: '1/4 beat',
+                            }}
+                        />
+                    </div>
+                </ControlStackWrap>
+                <ControlStackWrap title="envelope">
                     <RadioSet
                         selectedVal={currentEnvelope}
                         setter={setCurrentEnvelope}
                         valToCaptions={envelopeToDiagram}
                     />
-                </div>
+                </ControlStackWrap>
+                <ControlStackWrap title="mode">
+                    <RadioSet
+                        selectedVal={drawEraseMode}
+                        setter={setDrawEraseMode}
+                        valToCaptions={{ draw: 'place note', erase: 'erase note' }}
+                    />
+                </ControlStackWrap>
             </div>
         </div>
     );

@@ -7,7 +7,7 @@ const ColHilite = ({ colHilite, quantizeMode, BPM, noteMode, envelope }) => {
     const fullColWidth = beats2Pixels(1 / quantizeMode, BPM);
     //console.log({ quantizeMode, colHilite, colWidth });
 
-    const markerWidth = frame2pixel(noteMode == MODE.QUANTIZE ? envelope.length : 1);
+    const markerWidth = frame2pixel(envelope.length);
 
     const left = noteMode == MODE.QUANTIZE ? fullColWidth * colHilite : colHilite;
 

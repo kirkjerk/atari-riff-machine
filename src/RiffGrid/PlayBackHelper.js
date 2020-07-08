@@ -2,6 +2,13 @@ import SoundCache from '../SoundCache/SoundCache.js';
 import { beats2Frames, frames2mills } from '../Utils.js';
 import { doBasicTemplateSingle, doBasicTemplateDouble } from '../defs/templateBas.js';
 
+let shouldRepeat = false;
+
+const setShouldRepeat = (val) => {
+    shouldRepeat = val;
+    console.log(`setShouldRepeat ${shouldRepeat}`);
+};
+
 const launchPlayback = (origNotes, totalBeats, BPM, setPlaybackStartingTime) => {
     const notes = {};
 
@@ -62,6 +69,7 @@ const launchPlayback = (origNotes, totalBeats, BPM, setPlaybackStartingTime) => 
     }
     //console.log(notes);
     //console.log(notesWithStartAndEnd);
+
     playbackNotesWithStartAndEnd(notesWithStartAndEnd, totalBeats, BPM, setPlaybackStartingTime);
 };
 
@@ -85,11 +93,14 @@ const playbackNotesWithStartAndEnd = (notesWithStartAndEnd, totalBeats, BPM, set
             SoundCache.stopByTF(note.t, note.f);
         }, frames2mills(note.endFrame));
     });
-    //debugger;
-    //console.log('set reloop at', frames2mills(beats2Frames(totalBeats, BPM)));
-    setTimeout(() => {
-        playbackNotesWithStartAndEnd(notesWithStartAndEnd, totalBeats, BPM, setPlaybackStartingTime);
-    }, frames2mills(beats2Frames(totalBeats, BPM)));
+    console.log(`here shouldRepeat is ${shouldRepeat}`);
+    if (shouldRepeat) {
+        setTimeout(() => {
+            if (shouldRepeat) {
+                playbackNotesWithStartAndEnd(notesWithStartAndEnd, totalBeats, BPM, setPlaybackStartingTime);
+            }
+        }, frames2mills(beats2Frames(totalBeats, BPM)));
+    }
 };
 
 const notesAreSameTFV = (noteA, noteB) => {
@@ -141,4 +152,4 @@ const makeBatariMusic = (origNotes, totalBeats, BPM) => {
     console.log(doBasicTemplateSingle(buf));
 };
 
-export { launchPlayback, makeBatariMusic };
+export { launchPlayback, makeBatariMusic, setShouldRepeat };

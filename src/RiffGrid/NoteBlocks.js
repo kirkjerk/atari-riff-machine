@@ -2,10 +2,22 @@ import { settings, frame2pixel, map } from '../Utils.js';
 import React from 'react';
 import styles from './RiffGrid.module.css';
 
-const NoteBlocks = ({ notes }) => {
-    const blocks = Object.keys(notes).map((f) => {
+const NoteBlocks = ({ notes, T_F2Row }) => {
+    //console.log(T_F2Row);
+    const blocks = Object.keys(notes).map((frame) => {
         //{"t":6,"f":21,"v":15,"p":"f1#","key":"g","frame":383,"row":6,"v":8}
-        let { row, v } = notes[f];
+
+        //console.log(notes);
+
+        let { v, t, f } = notes[frame];
+
+        const row = T_F2Row[`${t}_${f}`];
+
+        //console.log(`row at ${row} for ${JSON.stringify({ v, t, f })} and ${JSON.stringify(T_F2Row)}`);
+
+        //console.log(row);
+        //debugger;
+        if (isNaN(row)) return null;
 
         const rowTop = settings.PixelsPerRow * row;
 
@@ -14,9 +26,9 @@ const NoteBlocks = ({ notes }) => {
         return (
             <div
                 className={styles.note}
-                key={f}
+                key={frame}
                 style={{
-                    left: `${frame2pixel(f)}px`,
+                    left: `${frame2pixel(frame)}px`,
                     top: `${rowTop + offsetFromRowTop}px`,
                     width: `${frame2pixel(1)}px`,
                     height: `${v}px`,

@@ -1,5 +1,146 @@
 const defaultSets = [
     {
+        desc: '4 short',
+        keyboard: 'us',
+        hasPiano: true,
+        sounds: [
+            {
+                t: 4,
+                f: 3,
+                p: 'b7',
+                key: '.',
+            },
+            {
+                t: 4,
+                f: 4,
+                p: 'g7',
+                key: 'l',
+            },
+            {
+                t: 4,
+                f: 5,
+                p: 'e7',
+                key: 'o',
+            },
+            {
+                t: 4,
+                f: 7,
+                p: 'b6',
+                key: ',',
+            },
+            {
+                t: 4,
+                f: 8,
+                p: 'a6',
+                key: 'k',
+            },
+            {
+                t: 4,
+                f: 9,
+                p: 'g6',
+                key: 'i',
+            },
+        ],
+    },
+
+    {
+        desc: 'AUDC6+8 short ',
+        keyboard: 'us',
+        hasPiano: true,
+        sounds: [
+            {
+                t: 8,
+                f: 6,
+                p: 'a2',
+                key: "'",
+            },
+            {
+                t: 8,
+                f: 11,
+                p: 'g2',
+                key: ';',
+            },
+            {
+                t: 8,
+                f: 13,
+                p: 'f2',
+                key: 'l',
+            },
+            {
+                t: 8,
+                f: 17,
+                p: 'e2',
+                key: 'k',
+            },
+            {
+                t: 8,
+                f: 19,
+                p: 'd2',
+                key: 'j',
+            },
+            {
+                t: 8,
+                f: 31,
+                p: 'c2',
+                key: 'h',
+            },
+            {
+                t: 6,
+                f: 20,
+                v: 15,
+                p: 'g1',
+                key: 'b',
+            },
+            {
+                t: 6,
+                f: 21,
+                v: 15,
+                p: 'f1#',
+                key: 'g',
+            },
+            {
+                t: 6,
+                f: 22,
+                v: 15,
+                p: 'f1',
+                key: 'v',
+            },
+        ],
+    },
+
+    {
+        desc: 'AUDC1 short',
+        keyboard: 'us',
+        hasPiano: true,
+        sounds: [
+            {
+                t: 1,
+                f: 11,
+                p: 'f3',
+                key: '\\',
+            },
+            {
+                t: 1,
+                f: 13,
+                p: 'd3',
+                key: ']',
+            },
+            {
+                t: 1,
+                f: 14,
+                p: 'c3#',
+                key: '=',
+            },
+            {
+                t: 1,
+                f: 15,
+                p: 'c3',
+                key: '[',
+            },
+        ],
+    },
+
+    {
         desc: 'AUDC6+1 w/ keyboard (low pure/buzzy + buzzy)',
         keyboard: 'us',
         hasPiano: true,

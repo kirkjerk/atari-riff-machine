@@ -1,8 +1,19 @@
 .riffMachine {
     border-radius: 10px;
-    background-color: #ddddff;
+
     display: inline-block;
     padding: 1em;
+    min-width: 80%;
+}
+.riffMachine h2 {
+    display: inline-block;
+}
+.riffMachine select {
+    margin: 2em;
+}
+
+.focused {
+    background-color: #ddddff;
 }
 
 .grid {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
 import styles from './RiffGrid.module.css';
 
@@ -23,20 +23,25 @@ import RowLabels from './RowLabels.js';
 import BeatLines from './BeatLines.js';
 import ColHilite from './ColHilite.js';
 import RowHilite from './RowHilite.js';
+import SoundSetSelector from './SoundSetSelector.js';
+import EnvelopeDiagram from './EnvelopeDiagram.js';
 
-import { launchPlayback } from './PlayBackHelper.js';
+import { launchPlayback, setShouldRepeat, makeBatariMusic } from './PlayBackHelper.js';
 
 import SoundCache from '../SoundCache/SoundCache.js';
 
 import envelopes from '../defs/envelopes.js';
 
+import DefaultSoundSets from '../defs/defaultSoundSets.js';
+
 const w = 500;
 
 const primeSoundCache = (soundSet, setKeyboardToNote) => {
+    // console.log(`LOADING SOUNDS FOR "${JSON.stringify(soundSet)}"`);
     SoundCache.loadSoundsForMap(soundSet);
-    console.log(soundSet);
+    // console.log(soundSet);
     const keyToNote = {};
-    console.log(soundSet);
+    // console.log(soundSet);
     soundSet.sounds.forEach((sound) => {
         keyToNote[sound.key] = sound;
     });
@@ -51,20 +56,7 @@ const x2BeatCol = (x, quantizeMode, BPM) => {
     return Math.floor(x / colWidthInFrames);
 };
 
-const diagramForEnvelope = (env) => {
-    return (
-        <div
-            className={styles.envDiagram}
-            style={{ height: `${settings.AtariMaxVol}px`, width: `${env.length * settings.PixelsPerFrame}px` }}
-        >
-            {env.map((v, i) => (
-                <div key={i} style={{ height: `${v}px` }}></div>
-            ))}
-        </div>
-    );
-};
-
-const RiffGrid = ({ soundSet }) => {
+const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, ref) => {
     //red hilite bar position
     const [rowHilite, setRowHilite] = useState(-1);
     //red coloumn bar
@@ -79,7 +71,6 @@ const RiffGrid = ({ soundSet }) => {
     const [currrentlyPlayingSound, setCurrrentlyPlayingSound] = React.useState(null);
 
     const [timePointer, setTimePointer] = React.useState(0);
-    const [isPlaying, setIsPlaying] = React.useState(false);
 
     const [BPM, setBPM] = React.useState(120);
 
@@ -95,10 +86,59 @@ const RiffGrid = ({ soundSet }) => {
 
     const [playbackStartingTime, setPlaybackStartingTime] = React.useState(0);
 
-    useEffect(() => primeSoundCache(soundSet, setKeyboardToNote), [soundSet]);
+    const [isPlaying, setIsPlaying] = React.useState(false);
 
-    const TFcount = soundSet.sounds.length;
+    const [currentSoundSetIndex, setCurrentSoundSetIndex] = React.useState(startingSoundSet);
+
+    const [rowForT_F, setRowForT_F] = React.useState({});
+    const [soundForRow, setSoundForRow] = React.useState([]);
+
+    useEffect(() => setAndLoadSoundset(currentSoundSetIndex), [startingSoundSet]);
+
+    const TFcount = Object.keys(soundForRow).length;
     const gridHeight = TFcount * settings.PixelsPerRow;
+
+    //we will be preserving rows for the old ones if they still have notes in play
+    const setAndLoadSoundset = (soundIndex) => {
+        setCurrentSoundSetIndex(soundIndex);
+        const newSoundSet = DefaultSoundSets[soundIndex];
+
+        const newTF2Row = {};
+        const newRow2Sound = [];
+
+        //so if we have TFs from rows that aren't in the current sound set add them to end
+        const TFsAlsoNeeded = {};
+
+        Object.keys(notes).forEach((frame) => {
+            const sound = notes[frame];
+            TFsAlsoNeeded[`${sound.t}_${sound.f}`] = sound;
+        });
+
+        let rowIndex = 0;
+
+        newSoundSet.sounds.forEach((sound) => {
+            const T_F = `${sound.t}_${sound.f}`;
+            newTF2Row[T_F] = rowIndex;
+            newRow2Sound[rowIndex] = sound;
+            delete TFsAlsoNeeded[T_F];
+            rowIndex++;
+        });
+
+        Object.keys(TFsAlsoNeeded).forEach((T_F) => {
+            //const sound = TFsAlsoNeeded[t_f];
+            //const T_F = `${sound.t}_${sound.f}`;
+            console.log(T_F);
+            newTF2Row[T_F] = rowIndex;
+            newRow2Sound[rowIndex] = TFsAlsoNeeded[T_F];
+            rowIndex++;
+        });
+
+        setRowForT_F(newTF2Row);
+        setSoundForRow(newRow2Sound);
+        // console.log(notes);
+        setNotes({ ...notes });
+        primeSoundCache(newSoundSet, setKeyboardToNote);
+    };
 
     const directStyle = {
         width: `${beats2Pixels(totalBeats, BPM)}px`,
@@ -126,11 +166,11 @@ const RiffGrid = ({ soundSet }) => {
 
         const frame = pixel2frame(x);
 
-        const newSound = soundSet.sounds[row];
+        const newSound = soundForRow[row];
+
         if (noteAlignMode === MODE.FREEHAND) {
             if (buttons) {
-                const note = { ...newSound, row };
-                const notesClone = { ...notes };
+                const note = { ...newSound };
 
                 // this used to be a simple
                 //    notesClone[frame] = note;
@@ -189,7 +229,7 @@ const RiffGrid = ({ soundSet }) => {
         const { offsetX: x, offsetY: y, buttons } = e.nativeEvent;
         if (noteAlignMode === MODE.QUANTIZE && buttons) {
             const row = y2NoteRow(y);
-            const newSound = soundSet.sounds[row];
+            const newSound = soundForRow[row];
             const note = { ...newSound, row };
             const frameStart = x2BeatCol(x, quantizeMode, BPM) * beats2Frames(1 / quantizeMode, BPM);
             setNotes(newNoteSetApplyingNoteWithEnvelope(notes, note, frameStart));
@@ -257,12 +297,33 @@ const RiffGrid = ({ soundSet }) => {
 
     const envelopeToDiagram = {};
     Object.keys(envelopes).map((key) => {
-        envelopeToDiagram[key] = diagramForEnvelope(envelopes[key]);
+        envelopeToDiagram[key] = <EnvelopeDiagram env={envelopes[key]} />;
     });
+
+    const togglePlayback = () => {
+        const startingNow = !isPlaying;
+
+        setIsPlaying(startingNow);
+        if (startingNow) {
+            setShouldRepeat(true);
+            launchPlayback(notes, totalBeats, BPM, setPlaybackStartingTime);
+        } else {
+            setShouldRepeat(false);
+        }
+    };
+
+    useImperativeHandle(ref, () => ({
+        externalTogglePlayback() {
+            togglePlayback();
+        },
+    }));
 
     return (
         <div
-            className={styles.riffMachine}
+            className={`${styles.riffMachine} ${isFocused && styles.focused} `}
+            onMouseDown={(e) => {
+                getFocus();
+            }}
             onKeyDown={(e) =>
                 handleKeyDown(
                     e,
@@ -270,36 +331,23 @@ const RiffGrid = ({ soundSet }) => {
                     noteAlignMode,
                     envelopes[currentEnvelope],
                     setKeyCurrentlyPressed,
-                    soundSet,
+                    DefaultSoundSets[currentSoundSetIndex],
                     setRowHilite
                 )
             }
             onKeyUp={(e) => handleKeyUp(e, setKeyCurrentlyPressed, setRowHilite)}
             tabIndex="0"
         >
-            <label>
-                Riff Length in Beats:{' '}
-                <input
-                    className={styles.short}
-                    value={totalBeats}
-                    onChange={(e) => setTotalBeats(e.target.value ? e.target.value : 4)}
-                />
-            </label>
-            <label>
-                BPM: <input className={styles.short} value={BPM} onChange={(e) => setBPM(e.target.value)} />
-            </label>
+            <h2>{title}</h2>
 
-            <button
-                onClick={() => {
-                    launchPlayback(notes, totalBeats, BPM, setPlaybackStartingTime);
-                    setTimePointer(0); //TODO: maybe remove this
+            <SoundSetSelector
+                selectedVal={currentSoundSetIndex}
+                setter={setAndLoadSoundset}
+                soundSet={DefaultSoundSets}
+            />
 
-                    setIsPlaying(true);
-                }}
-            >
-                play
-            </button>
             <div
+                className={styles.grid}
                 style={directStyle}
                 onMouseMove={(e) => {
                     handleMouseMove(e, setRowHilite);
@@ -318,10 +366,9 @@ const RiffGrid = ({ soundSet }) => {
                     setRowHilite(-1);
                     setColHilite(-1);
                 }}
-                className={styles.grid}
             >
                 {/* soundSet={soundSet} keyCurrentlyPressed={keyCurrentlyPressed} */}
-                <RowLabels {...{ soundSet, keyCurrentlyPressed }} />
+                <RowLabels {...{ keyCurrentlyPressed }} keyboardToNote={keyboardToNote} rows2Sound={soundForRow} />
                 <RowHilite {...{ rowHilite }} />
 
                 <ColHilite
@@ -329,7 +376,7 @@ const RiffGrid = ({ soundSet }) => {
                     envelope={envelopes[currentEnvelope]}
                 />
                 <BeatLines {...{ totalBeats, measureLengthInBeasts, BPM }} />
-                <NoteBlocks {...{ notes }} />
+                <NoteBlocks {...{ notes }} T_F2Row={rowForT_F} />
 
                 {isPlaying && (
                     <div
@@ -337,62 +384,106 @@ const RiffGrid = ({ soundSet }) => {
                         style={{ left: `${frame2pixel(millis2frames(Date.now() - playbackStartingTime, BPM))}px` }}
                     ></div>
                 )}
-                {/* {renderGhost(rowHilite)} */}
             </div>
 
-            <div>
-                <ControlStackWrap title="alignment">
-                    <label>
-                        <input
-                            onChange={() => setNoteAlignMode(MODE.FREEHAND)}
-                            type="radio"
-                            checked={noteAlignMode == MODE.FREEHAND}
-                        />
-                        {MODE.FREEHAND}
-                    </label>
-                    <br />
-                    <label>
-                        <input
-                            onChange={() => setNoteAlignMode(MODE.QUANTIZE)}
-                            type="radio"
-                            checked={noteAlignMode == MODE.QUANTIZE}
-                        />
-                        {MODE.QUANTIZE} to:
-                    </label>
-                    <div style={{ marginLeft: '1em' }}>
-                        <RadioSet
-                            selectedVal={quantizeMode}
-                            setter={(val) => {
-                                setQuantizeMode(val);
-                                setNoteAlignMode(MODE.QUANTIZE);
-                            }}
-                            valToCaptions={{
-                                [QUANT.WHOLEBEAT]: 'beat',
-                                [QUANT.HALFBEAT]: '1/2 beat',
-                                [QUANT.THIRDBEAT]: '1/3 beat',
-                                [QUANT.QUARTERBEAT]: '1/4 beat',
-                            }}
-                        />
+            {isFocused && (
+                <div>
+                    <div>
+                        <ControlStackWrap title="alignment">
+                            <label>
+                                <input
+                                    onChange={() => setNoteAlignMode(MODE.FREEHAND)}
+                                    type="radio"
+                                    checked={noteAlignMode == MODE.FREEHAND}
+                                />
+                                {MODE.FREEHAND}
+                            </label>
+                            <br />
+                            <label>
+                                <input
+                                    onChange={() => setNoteAlignMode(MODE.QUANTIZE)}
+                                    type="radio"
+                                    checked={noteAlignMode == MODE.QUANTIZE}
+                                />
+                                {MODE.QUANTIZE} to:
+                            </label>
+                            <div style={{ marginLeft: '1em' }}>
+                                <RadioSet
+                                    selectedVal={quantizeMode}
+                                    setter={(val) => {
+                                        setQuantizeMode(val);
+                                        setNoteAlignMode(MODE.QUANTIZE);
+                                    }}
+                                    valToCaptions={{
+                                        [QUANT.WHOLEBEAT]: 'beat',
+                                        [QUANT.HALFBEAT]: '1/2 beat',
+                                        [QUANT.THIRDBEAT]: '1/3 beat',
+                                        [QUANT.QUARTERBEAT]: '1/4 beat',
+                                    }}
+                                />
+                            </div>
+                        </ControlStackWrap>
+                        <ControlStackWrap title="envelope">
+                            <RadioSet
+                                selectedVal={currentEnvelope}
+                                setter={setCurrentEnvelope}
+                                valToCaptions={envelopeToDiagram}
+                            />
+                        </ControlStackWrap>
+                        <ControlStackWrap title="mode">
+                            <RadioSet
+                                selectedVal={drawEraseMode}
+                                setter={setDrawEraseMode}
+                                valToCaptions={{ draw: 'place note', erase: 'erase note' }}
+                            />
+                        </ControlStackWrap>
+
+                        <ControlStackWrap title="riff details">
+                            <div>
+                                <label>
+                                    Loop Length:
+                                    <br />
+                                    <input
+                                        className={styles.short}
+                                        value={totalBeats}
+                                        onChange={(e) => setTotalBeats(e.target.value ? e.target.value : 4)}
+                                    />{' '}
+                                    Beats
+                                </label>
+                            </div>
+                            <div>
+                                <label>
+                                    Tempo:
+                                    <br />
+                                    <input
+                                        className={styles.short}
+                                        value={BPM}
+                                        onChange={(e) => setBPM(e.target.value)}
+                                    />{' '}
+                                    BPM
+                                </label>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    togglePlayback();
+                                }}
+                            >
+                                {isPlaying ? 'stop playback' : 'start playback'}
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    makeBatariMusic(notes, totalBeats, BPM);
+                                }}
+                            >
+                                make batari in console
+                            </button>
+                        </ControlStackWrap>
                     </div>
-                </ControlStackWrap>
-                <ControlStackWrap title="envelope">
-                    <RadioSet
-                        selectedVal={currentEnvelope}
-                        setter={setCurrentEnvelope}
-                        valToCaptions={envelopeToDiagram}
-                    />
-                </ControlStackWrap>
-                <ControlStackWrap title="mode">
-                    <RadioSet
-                        selectedVal={drawEraseMode}
-                        setter={setDrawEraseMode}
-                        valToCaptions={{ draw: 'place note', erase: 'erase note' }}
-                    />
-                </ControlStackWrap>
-            </div>
+                </div>
+            )}
         </div>
     );
-};
+});
 
 export default RiffGrid;
 

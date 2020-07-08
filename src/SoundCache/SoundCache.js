@@ -28,7 +28,7 @@ const SoundCache = {
     loadSoundsForMap: (set) => {
         // console.log(bundledFiles);
         set.sounds.forEach((item) => {
-            const { t, f, v, p, key } = item;
+            const { t, f } = item;
 
             // console.log(tf2filename(t, f));
 

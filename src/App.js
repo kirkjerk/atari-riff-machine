@@ -44,17 +44,32 @@ const App = () => {
     const childRef1 = useRef();
 
     const [whichHasFocus, setWhichHasFocus] = useState(0);
+    const [isPlaying0, setIsPlaying0] = useState(false);
+    const [isPlaying1, setIsPlaying1] = useState(false);
 
     return (
         <React.Fragment>
-            <button
-                onClick={() => {
-                    childRef0.current.externalTogglePlayback();
-                    childRef1.current.externalTogglePlayback();
-                }}
-            >
-                Toggle All Playback
-            </button>
+            {!isPlaying0 && !isPlaying1 && (
+                <button
+                    onClick={() => {
+                        childRef0.current.externalStartPlayback();
+                        childRef1.current.externalStartPlayback();
+                    }}
+                >
+                    Start Playback
+                </button>
+            )}
+            {(isPlaying0 || isPlaying1) && (
+                <button
+                    onClick={() => {
+                        childRef0.current.externalStopPlayback();
+                        childRef1.current.externalStopPlayback();
+                    }}
+                >
+                    End Playback
+                </button>
+            )}
+
             <br />
             <RiffGrid
                 isFocused={whichHasFocus == 0}
@@ -62,6 +77,8 @@ const App = () => {
                 title="AUD*0"
                 ref={childRef0}
                 startingSoundSet={2}
+                isPlaying={isPlaying0}
+                setIsPlaying={setIsPlaying0}
             />
             <br />
             <RiffGrid
@@ -69,7 +86,9 @@ const App = () => {
                 getFocus={() => setWhichHasFocus(1)}
                 title="AUD*1"
                 ref={childRef1}
-                startingSoundSet={2}
+                startingSoundSet={1}
+                isPlaying={isPlaying1}
+                setIsPlaying={setIsPlaying1}
             />
         </React.Fragment>
     );

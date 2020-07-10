@@ -3,6 +3,7 @@ import Pizzicato from '../js/Pizzicato.min.js';
 //const bundledFiles = require('./wav/*.wav');
 
 import bundledFiles from '../wav/*.wav';
+import fxFiles from '../fx/*.wav';
 import { settings } from '../Utils.js';
 
 const clipCache = {};
@@ -12,6 +13,10 @@ const num2dig = (d) => {
 };
 const tf2filename = (t, f) => {
     return bundledFiles[`sound_${num2dig(t)}_${num2dig(f)}`];
+};
+
+const fxFilename = (base) => {
+    return fxFiles[`${base}`];
 };
 
 const loadLoop = (t, f) => {
@@ -36,6 +41,28 @@ const SoundCache = {
         });
         // console.log(map);
         //Pizzicato.pla;
+    },
+
+    loadRecordingSounds: () => {
+        clipCache[fxFilename('ds_cross_stick_rim')] = new Pizzicato.Sound({
+            source: 'file',
+            options: { path: fxFilename('ds_cross_stick_rim') },
+        });
+
+        for (let i = 1; i <= 4; i++) {
+            clipCache[fxFilename(`say${i}`)] = new Pizzicato.Sound({
+                source: 'file',
+                options: { path: fxFilename(`say${i}`) },
+            });
+        }
+    },
+
+    playTap: () => {
+        clipCache[fxFilename('ds_cross_stick_rim')].play();
+    },
+
+    playSayNum: (num) => {
+        clipCache[fxFilename(`say${num}`)].play();
     },
 
     playByTFV: (t, f, v) => {

@@ -81,6 +81,7 @@ input.short {
     width: 4em;
     display: flex;
     justify-content: space-between;
+    z-index: 100;
 }
 .rowLabel.rowLabelPressed {
     background-color: #fcc;

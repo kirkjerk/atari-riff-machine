@@ -8,10 +8,8 @@ import {
     beats2Frames,
     pixel2frame,
     map,
+    beats2millis,
     frames2mills,
-    frame2pixel,
-    millis2frames,
-    useInterval,
     MODE,
     QUANT,
 } from '../Utils.js';
@@ -25,6 +23,7 @@ import ColHilite from './ColHilite.js';
 import RowHilite from './RowHilite.js';
 import SoundSetSelector from './SoundSetSelector.js';
 import EnvelopeDiagram from './EnvelopeDiagram.js';
+import CurrentTimePointer from './CurrentTimePointer.js';
 
 import { launchPlayback, setShouldRepeat, makeBatariMusic } from './PlayBackHelper.js';
 
@@ -56,7 +55,7 @@ const x2BeatCol = (x, quantizeMode, BPM) => {
     return Math.floor(x / colWidthInFrames);
 };
 
-const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, ref) => {
+const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus, isPlaying, setIsPlaying }, ref) => {
     //red hilite bar position
     const [rowHilite, setRowHilite] = useState(-1);
     //red coloumn bar
@@ -69,8 +68,6 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
     const [measureLengthInBeasts, setMeasureLengthInBeats] = useState(4);
     //immediate sound when mousing down
     const [currrentlyPlayingSound, setCurrrentlyPlayingSound] = React.useState(null);
-
-    const [timePointer, setTimePointer] = React.useState(0);
 
     const [BPM, setBPM] = React.useState(120);
 
@@ -86,14 +83,15 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
 
     const [playbackStartingTime, setPlaybackStartingTime] = React.useState(0);
 
-    const [isPlaying, setIsPlaying] = React.useState(false);
-
     const [currentSoundSetIndex, setCurrentSoundSetIndex] = React.useState(startingSoundSet);
 
     const [rowForT_F, setRowForT_F] = React.useState({});
     const [soundForRow, setSoundForRow] = React.useState([]);
 
-    useEffect(() => setAndLoadSoundset(currentSoundSetIndex), [startingSoundSet]);
+    useEffect(() => {
+        setAndLoadSoundset(currentSoundSetIndex);
+        SoundCache.loadRecordingSounds();
+    }, [startingSoundSet]);
 
     const TFcount = Object.keys(soundForRow).length;
     const gridHeight = TFcount * settings.PixelsPerRow;
@@ -138,6 +136,12 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
         // console.log(notes);
         setNotes({ ...notes });
         primeSoundCache(newSoundSet, setKeyboardToNote);
+    };
+
+    const launchRecording = () => {
+        for (let i = 4; i >= 1; i--) {
+            setTimeout(() => SoundCache.playSayNum(i), beats2millis(4 - i, BPM));
+        }
     };
 
     const directStyle = {
@@ -195,31 +199,25 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
         }
     };
 
-    const handleKeyDown = (
-        e,
-        keyboardToNote,
-        noteAlignMode,
-        envelope,
-        setKeyCurrentlyPressed,
-        soundSet,
-        setRowHilite
-    ) => {
+    const handleKeyDown = (e) => {
         setKeyCurrentlyPressed(e.key);
-
-        setRowHilite(soundSet.sounds.findIndex((note) => note.key == e.key));
-
         const note = keyboardToNote[e.key];
-        if (note) {
-            if (noteAlignMode == MODE.QUANTIZE) {
-                //stopAnyCurrentlyPlayingSound();
-                playSoundInEnvelopeNow(note, envelope);
-            } else {
-                startOrContinueCurrentlyPlayingSound(note);
-            }
+        if (note) handleNoteStart(note);
+    };
+    const handleNoteStart = (note) => {
+        const envelope = envelopes[currentEnvelope];
+        const soundSet = DefaultSoundSets[currentSoundSetIndex];
+        setRowHilite(soundSet.sounds.findIndex((soundsnote) => soundsnote.t == note.t && soundsnote.f == note.f));
+
+        if (noteAlignMode == MODE.QUANTIZE) {
+            //stopAnyCurrentlyPlayingSound();
+            playSoundInEnvelopeNow(note, envelope);
+        } else {
+            startOrContinueCurrentlyPlayingSound(note);
         }
     };
 
-    const handleKeyUp = (e, setKeyCurrentlyPressed, setRowHilite) => {
+    const handleNoteStop = () => {
         setKeyCurrentlyPressed(null);
         setRowHilite(-1);
         stopAnyCurrentlyPlayingSound();
@@ -246,23 +244,21 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
 
             const thisFrame = frameStart + i;
             if (thisFrame < beats2Frames(totalBeats, BPM)) {
-                if (drawEraseMode !== 'erase') {
-                    newNotes[thisFrame] = noteWithVol;
-                } else {
-                    delete newNotes[thisFrame];
+                switch (drawEraseMode) {
+                    case 'draw':
+                        newNotes[thisFrame] = noteWithVol;
+                        break;
+                    case 'erase':
+                        delete newNotes[thisFrame];
+                        break;
+                    case 'neither':
+                        break;
                 }
             }
         }
 
         return newNotes;
     };
-
-    //oof intervals and react don't play too well together -- I had to jam this here
-    // https://overreacted.io/making-setinterval-declarative-with-react-hooks/
-    useInterval(() => {
-        // Your custom logic here
-        setTimePointer(timePointer + 1);
-    }, frames2mills(10));
 
     const startOrContinueCurrentlyPlayingSound = (newSound) => {
         if (currrentlyPlayingSound && newSound != currrentlyPlayingSound) {
@@ -301,20 +297,27 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
     });
 
     const togglePlayback = () => {
-        const startingNow = !isPlaying;
+        if (!isPlaying) startPlayback();
+        else stopPlayback();
+    };
 
-        setIsPlaying(startingNow);
-        if (startingNow) {
-            setShouldRepeat(true);
-            launchPlayback(notes, totalBeats, BPM, setPlaybackStartingTime);
-        } else {
-            setShouldRepeat(false);
-        }
+    const startPlayback = () => {
+        setIsPlaying(true);
+        setShouldRepeat(true);
+        launchPlayback(notes, totalBeats, BPM, setPlaybackStartingTime);
+    };
+
+    const stopPlayback = () => {
+        setIsPlaying(false);
+        setShouldRepeat(false);
     };
 
     useImperativeHandle(ref, () => ({
-        externalTogglePlayback() {
-            togglePlayback();
+        externalStartPlayback() {
+            startPlayback();
+        },
+        externalStopPlayback() {
+            stopPlayback();
         },
     }));
 
@@ -324,18 +327,8 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
             onMouseDown={(e) => {
                 getFocus();
             }}
-            onKeyDown={(e) =>
-                handleKeyDown(
-                    e,
-                    keyboardToNote,
-                    noteAlignMode,
-                    envelopes[currentEnvelope],
-                    setKeyCurrentlyPressed,
-                    DefaultSoundSets[currentSoundSetIndex],
-                    setRowHilite
-                )
-            }
-            onKeyUp={(e) => handleKeyUp(e, setKeyCurrentlyPressed, setRowHilite)}
+            onKeyDown={(e) => handleKeyDown(e, keyboardToNote, setKeyCurrentlyPressed)}
+            onKeyUp={(e) => handleNoteStop()}
             tabIndex="0"
         >
             <h2>{title}</h2>
@@ -353,6 +346,7 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
                     handleMouseMove(e, setRowHilite);
                 }}
                 onMouseDown={(e) => {
+                    console.log('ow');
                     handleMouseMove(e, setRowHilite);
                     if (noteAlignMode === MODE.QUANTIZE) {
                         handleMouseDown(e);
@@ -368,7 +362,10 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
                 }}
             >
                 {/* soundSet={soundSet} keyCurrentlyPressed={keyCurrentlyPressed} */}
-                <RowLabels {...{ keyCurrentlyPressed }} keyboardToNote={keyboardToNote} rows2Sound={soundForRow} />
+                <RowLabels
+                    {...{ keyCurrentlyPressed, keyboardToNote, handleNoteStart, handleNoteStop }}
+                    rows2Sound={soundForRow}
+                />
                 <RowHilite {...{ rowHilite }} />
 
                 <ColHilite
@@ -378,17 +375,20 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
                 <BeatLines {...{ totalBeats, measureLengthInBeasts, BPM }} />
                 <NoteBlocks {...{ notes }} T_F2Row={rowForT_F} />
 
-                {isPlaying && (
-                    <div
-                        className={styles.timePointer}
-                        style={{ left: `${frame2pixel(millis2frames(Date.now() - playbackStartingTime, BPM))}px` }}
-                    ></div>
-                )}
+                <CurrentTimePointer startTime={playbackStartingTime} BPM={BPM} isPlaying={isPlaying} />
             </div>
+            {JSON.stringify({ isPlaying })}
 
             {isFocused && (
                 <div>
                     <div>
+                        <ControlStackWrap title="mode">
+                            <RadioSet
+                                selectedVal={drawEraseMode}
+                                setter={setDrawEraseMode}
+                                valToCaptions={{ draw: 'place note', erase: 'erase note', neither: 'just sound' }}
+                            />
+                        </ControlStackWrap>
                         <ControlStackWrap title="alignment">
                             <label>
                                 <input
@@ -430,13 +430,6 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
                                 valToCaptions={envelopeToDiagram}
                             />
                         </ControlStackWrap>
-                        <ControlStackWrap title="mode">
-                            <RadioSet
-                                selectedVal={drawEraseMode}
-                                setter={setDrawEraseMode}
-                                valToCaptions={{ draw: 'place note', erase: 'erase note' }}
-                            />
-                        </ControlStackWrap>
 
                         <ControlStackWrap title="riff details">
                             <div>
@@ -463,19 +456,21 @@ const RiffGrid = forwardRef(({ startingSoundSet, title, isFocused, getFocus }, r
                                     BPM
                                 </label>
                             </div>
-                            <button
-                                onClick={() => {
-                                    togglePlayback();
-                                }}
-                            >
-                                {isPlaying ? 'stop playback' : 'start playback'}
-                            </button>
+
                             <button
                                 onClick={(e) => {
                                     makeBatariMusic(notes, totalBeats, BPM);
                                 }}
                             >
                                 make batari in console
+                            </button>
+
+                            <button
+                                onClick={(e) => {
+                                    launchRecording();
+                                }}
+                            >
+                                Record
                             </button>
                         </ControlStackWrap>
                     </div>

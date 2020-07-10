@@ -6,7 +6,7 @@ let shouldRepeat = false;
 
 const setShouldRepeat = (val) => {
     shouldRepeat = val;
-    console.log(`setShouldRepeat ${shouldRepeat}`);
+    // console.log(`setShouldRepeat ${shouldRepeat}`);
 };
 
 const launchPlayback = (origNotes, totalBeats, BPM, setPlaybackStartingTime) => {
@@ -93,7 +93,7 @@ const playbackNotesWithStartAndEnd = (notesWithStartAndEnd, totalBeats, BPM, set
             SoundCache.stopByTF(note.t, note.f);
         }, frames2mills(note.endFrame));
     });
-    console.log(`here shouldRepeat is ${shouldRepeat}`);
+    //console.log(`here shouldRepeat is ${shouldRepeat}`);
     if (shouldRepeat) {
         setTimeout(() => {
             if (shouldRepeat) {

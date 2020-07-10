@@ -35,6 +35,11 @@ export const beats2Frames = (beats, BPM) => {
     return (beats / BPM) * settings.SecondsPerMinute * settings.FramesPerSecond;
 };
 
+export const beats2millis = (beats, BPM) => {
+    const frames = beats2Frames(beats, BPM);
+    return frames2mills(frames);
+};
+
 export const map = (val, inputMin, inputMax, outputMin, outputMax) => {
     const inputRange = inputMax - inputMin;
     const outputRange = outputMax - outputMin;
@@ -42,26 +47,6 @@ export const map = (val, inputMin, inputMax, outputMin, outputMax) => {
     const trueVal = val - inputMin;
     return outputMin + trueVal * scale;
 };
-
-export function useInterval(callback, delay) {
-    const savedCallback = useRef();
-
-    // Remember the latest callback.
-    useEffect(() => {
-        savedCallback.current = callback;
-    }, [callback]);
-
-    // Set up the interval.
-    useEffect(() => {
-        function tick() {
-            savedCallback.current();
-        }
-        if (delay !== null) {
-            let id = setInterval(tick, delay);
-            return () => clearInterval(id);
-        }
-    }, [delay]);
-}
 
 export const MODE = {
     FREEHAND: 'freehand',

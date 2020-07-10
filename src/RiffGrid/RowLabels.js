@@ -6,7 +6,13 @@ import { settings } from '../Utils.js';
 const RowLabel = ({ sound, index, isPressed, keyboardKey }) => (
     <div
         className={`${styles.rowLabel} ${isPressed ? styles.rowLabelPressed : ''}`}
-        style={{ top: `${index * settings.PixelsPerRow}px`, height: `${settings.PixelsPerRow}px` }}
+        style={{
+            top: `${index * settings.PixelsPerRow}px`,
+            height: `${settings.PixelsPerRow}px`,
+        }}
+        onClick={() => {
+            console.log('2');
+        }}
     >
         <div>{keyboardKey}</div>
         <div>
@@ -14,7 +20,7 @@ const RowLabel = ({ sound, index, isPressed, keyboardKey }) => (
         </div>
     </div>
 );
-const RowLabels = ({ rows2Sound, keyboardToNote, keyCurrentlyPressed }) => {
+const RowLabels = ({ rows2Sound, keyboardToNote, keyCurrentlyPressed, handleNoteStart, handleNoteStop }) => {
     const noteToKeyboard = Object.keys(keyboardToNote).reduce((ret, key) => {
         const tf = keyboardToNote[key];
         ret[`${tf.t}_${tf.f}`] = key;

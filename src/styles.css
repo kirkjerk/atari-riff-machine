@@ -4,3 +4,11 @@ body {
 h1 {
     font-family: 'Courier New', Courier, monospace;
 }
+
+button {
+    margin: 1em 0.2em;
+}
+textarea {
+    width: 60em;
+    height: 20em;
+}

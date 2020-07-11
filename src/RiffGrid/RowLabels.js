@@ -3,7 +3,7 @@ import styles from './RiffGrid.module.css';
 
 import { settings } from '../Utils.js';
 
-const RowLabel = ({ sound, index, isPressed, keyboardKey }) => (
+const RowLabel = ({ sound, index, isPressed }) => (
     <div
         className={`${styles.rowLabel} ${isPressed ? styles.rowLabelPressed : ''}`}
         style={{
@@ -14,13 +14,13 @@ const RowLabel = ({ sound, index, isPressed, keyboardKey }) => (
             console.log('2');
         }}
     >
-        <div>{keyboardKey}</div>
+        <div>{sound.p}</div>
         <div>
             <b>{sound.t}</b> {sound.f}
         </div>
     </div>
 );
-const RowLabels = ({ rows2Sound, keyboardToNote, keyCurrentlyPressed, handleNoteStart, handleNoteStop }) => {
+const RowLabels = ({ rows2Sound, keyboardToNote, keyCurrentlyPressed }) => {
     const noteToKeyboard = Object.keys(keyboardToNote).reduce((ret, key) => {
         const tf = keyboardToNote[key];
         ret[`${tf.t}_${tf.f}`] = key;
@@ -28,7 +28,7 @@ const RowLabels = ({ rows2Sound, keyboardToNote, keyCurrentlyPressed, handleNote
     }, {});
 
     return rows2Sound.map((sound, index) => {
-        const isPressed = keyCurrentlyPressed == sound.key;
+        const isPressed = keyCurrentlyPressed === sound.key;
         return (
             <RowLabel
                 isPressed={isPressed}

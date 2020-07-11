@@ -1,6 +1,5 @@
 import SoundCache from '../SoundCache/SoundCache.js';
 import { beats2Frames, frames2mills } from '../Utils.js';
-import { doBasicTemplateSingle, doBasicTemplateDouble } from '../defs/templateBas.js';
 
 let shouldRepeat = false;
 
@@ -54,7 +53,7 @@ const launchPlayback = (origNotes, totalBeats, BPM, setPlaybackStartingTime) => 
             } else {
                 //notes are differe, nothing previous playing
                 if (thisFrameTFV) {
-                    console.log(`looking at frame ${i} we grab start frame because no currently playing note`);
+                    //console.log(`looking at frame ${i} we grab start frame because no currently playing note`);
                     thisFrameTFV.startFrame = i;
                     thisFrameTFV.startV = thisFrameTFV.v;
                     thisFrameTFV.volChange = null;
@@ -149,7 +148,7 @@ const makeBatariMusic = (origNotes, totalBeats, BPM) => {
     const buf = notesOrRestsWithDuration
         .map((tfvd) => `   ${tfvd.v}, ${tfvd.t}, ${tfvd.f}, ${tfvd.duration}\n`)
         .join('');
-    console.log(doBasicTemplateSingle(buf));
+    return buf;
 };
 
 export { launchPlayback, makeBatariMusic, setShouldRepeat };

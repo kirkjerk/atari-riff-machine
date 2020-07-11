@@ -1,41 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './RiffGrid.module.css';
+import { millis2pixels } from '../Utils.js';
 
-import { millis2frames, frame2pixel } from '../Utils.js';
-
-let isNowPlaying = false;
-let setNowishPasser = null;
-
-const tryBeginTimer = (shouldBePlaying) => {
-    isNowPlaying = shouldBePlaying;
-    if (shouldBePlaying) {
-        setTimeout(continueTimerOrNo, 100);
-    }
-};
-
-const continueTimerOrNo = () => {
-    if (setNowishPasser) {
-        setNowishPasser(Date.now());
-    }
-    console.log('continue?');
-    if (isNowPlaying) {
-        setTimeout(continueTimerOrNo, 100);
-    }
-};
-
-const CurrentTimePointer = ({ startTime, BPM, isPlaying }) => {
-    useEffect(() => tryBeginTimer(isPlaying), [isPlaying]);
-
+const CurrentTimePointer = ({ startTime, isPlaying }) => {
     const [nowish, setNowish] = useState(0);
+    let timerRef = null;
 
-    setNowishPasser = setNowish;
+    if (isPlaying) {
+        timerRef = setTimeout(() => setNowish(Date.now()), 100);
+    }
+    if (!isPlaying) {
+        clearTimeout(timerRef);
+        return null;
+    }
 
-    if (!isPlaying) return null;
-    return (
-        <div
-            className={styles.timePointer}
-            style={{ left: `${frame2pixel(millis2frames(nowish - startTime, BPM))}px` }}
-        ></div>
-    );
+    return <div className={styles.timePointer} style={{ left: `${millis2pixels(nowish - startTime)}px` }}></div>;
 };
 export default CurrentTimePointer;

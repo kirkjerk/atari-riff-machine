@@ -61,4 +61,5 @@ export const QUANT = {
     HALFBEAT: 2,
     THIRDBEAT: 3,
     QUARTERBEAT: 4,
+    EIGHTHBEAT: 8,
 };

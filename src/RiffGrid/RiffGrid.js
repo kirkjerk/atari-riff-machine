@@ -68,7 +68,7 @@ const RiffGrid = forwardRef(
         );
         //how long the whole thing is
         const [totalBeats, setTotalBeats] = useState(
-            localStorage.getItem(`totalbeats_${title}`) ? JSON.parse(localStorage.getItem(`totalbeats_${title}`)) : 4
+            localStorage.getItem(`totalbeats_${title}`) ? JSON.parse(localStorage.getItem(`totalbeats_${title}`)) : 16
         );
         //how often to draw measure markers
         const [measureLengthInBeasts, setMeasureLengthInBeats] = useState(4);
@@ -481,6 +481,7 @@ const RiffGrid = forwardRef(
                                             [QUANT.HALFBEAT]: '1/2 beat',
                                             [QUANT.THIRDBEAT]: '1/3 beat',
                                             [QUANT.QUARTERBEAT]: '1/4 beat',
+                                            [QUANT.EIGHTHBEAT]: '1/8 beat',
                                         }}
                                     />
                                 </div>
@@ -527,14 +528,15 @@ const RiffGrid = forwardRef(
                                     Record
                                 </button> */}
 
-                                {/* 
-                                <button
-                                    onClick={() => {
-                                        console.log(notes);
-                                    }}
-                                >
-                                    show notes
-                                </button> */}
+                                {/* {
+                                    <button
+                                        onClick={() => {
+                                            console.log(notes);
+                                        }}
+                                    >
+                                        show notes
+                                    </button>
+                                } */}
                             </ControlStackWrap>
                         </div>
                     </div>

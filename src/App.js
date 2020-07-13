@@ -155,7 +155,7 @@ const App = () => {
                     getFocus={() => setWhichHasFocus(0)}
                     title="AUDC0"
                     ref={childRef0}
-                    startingSoundSet={2}
+                    startingSoundSet={1}
                     isPlaying={isPlaying0}
                     setIsPlaying={setIsPlaying0}
                     startDualPlayback={startDualPlayback}
@@ -166,7 +166,7 @@ const App = () => {
                     getFocus={() => setWhichHasFocus(1)}
                     title="AUDC1"
                     ref={childRef1}
-                    startingSoundSet={1}
+                    startingSoundSet={2}
                     isPlaying={isPlaying1}
                     setIsPlaying={setIsPlaying1}
                     startDualPlayback={startDualPlayback}
@@ -190,14 +190,14 @@ const App = () => {
             <br />
             <br />
             {batariCode && <textarea readOnly value={batariCode} />}
-
+            {/* 
             <button
                 onClick={() => {
                     transform();
                 }}
             >
                 do the thing{' '}
-            </button>
+            </button> */}
         </React.Fragment>
     );
 };

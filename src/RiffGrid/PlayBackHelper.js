@@ -144,6 +144,15 @@ const makeBatariMusic = (origNotes, totalBeats, BPM) => {
         currentlyPlayingTFV.duration = beats2Frames(totalBeats, BPM) - currentlyPlayingTFV.startFrame;
         notesOrRestsWithDuration.push(currentlyPlayingTFV);
     }
+
+    //debugging stuff
+    let totalduration = 0;
+    notesOrRestsWithDuration.forEach((tfvd) => {
+        console.log(JSON.stringify(tfvd));
+        totalduration += tfvd.duration;
+    });
+    console.log(`totalduration ${totalduration}`);
+
     //VCFD
     const buf = notesOrRestsWithDuration
         .map((tfvd) => `   ${tfvd.v}, ${tfvd.t}, ${tfvd.f}, ${tfvd.duration}\n`)

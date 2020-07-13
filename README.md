@@ -2,6 +2,8 @@
 
 A tracker and virtual keyboard for making atari 2600 riffs + loops
 
+See it in action at [alienbill.com/2600/atari-riff-machine](https://alienbill.com/2600/atari-riff-machine/)
+
 ## Building and running on localhost
 
 First install dependencies:

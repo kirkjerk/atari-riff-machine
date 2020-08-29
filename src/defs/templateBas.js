@@ -93,8 +93,8 @@ end
 `;
 }
 export function doBasicTemplateDouble(DATA0, DATA1) {
-    return `    rem  *****************************************************
-    rem  *  Music Starter using sdata
+    return `        rem  *****************************************************
+    rem  *  Music Starter using sdata hi mom
     rem  *  Based on code posted in the Ballblazer thread at AtariAge:
     rem  *  http://www.atariage.com/forums/index.php?s=&showtopic=130990&view=findpost&p=1615280
     rem  *  Code adapted by Duane Alan Hahn (Random Terrain)
@@ -126,7 +126,7 @@ export function doBasicTemplateDouble(DATA0, DATA1) {
  
     rem  *  Initialize duration and set up music
     duration0 = 1
-    goto MusicSetup0
+    gosub MusicSetup0
  
     rem  *****************************************************
     rem  *  Main game loop starts here.
@@ -139,7 +139,7 @@ GotMusic0
      if wastefulInitCheck = 1 then goto skipCheck
      wastefulInitCheck = 1
      duration1 = 1
-     goto MusicSetup1
+     gosub MusicSetup1
 skipCheck
  
     goto GetMusic1
@@ -164,13 +164,14 @@ GetMusic0
  
  
     rem  *  Retrieve channel 0 data
+ReadMusic0
     temp4 = sread(musicData0)
     temp5 = sread(musicData0)
     temp6 = sread(musicData0)
  
  
     rem  *  Check for end of data
-    if temp4=255 then duration0 = 1 : goto MusicSetup0
+    if temp4=255 then duration0 = 1 : gosub MusicSetup0 : goto ReadMusic0
  
  
     rem  *  Play channel 0
@@ -187,7 +188,7 @@ MusicSetup0
     sdata musicData0 = y
 ${DATA0}     255
 end
-    goto GotMusic0
+    return
  
  
 GetMusic1
@@ -197,13 +198,14 @@ GetMusic1
     if duration1>0 then GotMusic1
  
     rem  *  Retrieve channel 1 data
+ReadMusic1
     temp4 = sread(musicData1)
     temp5 = sread(musicData1)
     temp6 = sread(musicData1)
  
  
     rem  *  Check for end of data
-    if temp4=255 then duration1 = 1 : goto MusicSetup1
+    if temp4=255 then duration1 = 1 : gosub MusicSetup1 : goto ReadMusic1
  
  
     rem  *  Play channel 0
@@ -219,7 +221,6 @@ MusicSetup1
     sdata musicData1 = w
 ${DATA1}     255
 end
-    goto GotMusic1
- 
+    return
  `;
 }

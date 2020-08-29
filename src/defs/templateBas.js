@@ -98,7 +98,7 @@ export function doBasicTemplateDouble(DATA0, DATA1) {
     rem  *  Based on code posted in the Ballblazer thread at AtariAge:
     rem  *  http://www.atariage.com/forums/index.php?s=&showtopic=130990&view=findpost&p=1615280
     rem  *  Code adapted by Duane Alan Hahn (Random Terrain)
-    rem  *  Code further modified by Kirk Israel
+    rem  *  Code further modified by Kirk Israel (and repaired by Mike "RevEng" Saarna)
     rem  *  Explanation:
     rem  *  The 256-byte limitation is removed when using sdata.
     rem  *  You can fill a whole 4k bank with music if you want.

@@ -94,7 +94,7 @@ end
 }
 export function doBasicTemplateDouble(DATA0, DATA1) {
     return `        rem  *****************************************************
-    rem  *  Music Starter using sdata hi mom
+    rem  *  Music Starter using sdata
     rem  *  Based on code posted in the Ballblazer thread at AtariAge:
     rem  *  http://www.atariage.com/forums/index.php?s=&showtopic=130990&view=findpost&p=1615280
     rem  *  Code adapted by Duane Alan Hahn (Random Terrain)

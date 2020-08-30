@@ -36,4 +36,6 @@ Uses [pizzicato.js](https://alemangui.github.io/pizzicato/)
 
 Atari 2600 sound files courtesy [Random Terrain](https://www.randomterrain.com/)
 
+Also thanks to Mike "RevEng" Saarna for fixing a timing issue on the batari Basic sample code.
+
 Made with [createapp.dev](https://createapp.dev/) and [parcel.js](https://parceljs.org/)
